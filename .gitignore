@@ -14,8 +14,9 @@ temp.png
 # python
 /venv/
 __pycache__/
+
 # tgbot
-/config.py
+
 /*.session
 /*.session-journal
 input-*.raw

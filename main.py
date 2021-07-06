@@ -1,11 +1,8 @@
 from __future__ import unicode_literals
 
 import asyncio
-import functools
 import os
-import subprocess
 import traceback
-from sys import version as pyver
 
 # Initialize db
 import db
@@ -28,7 +25,7 @@ from misc import HELP_TEXT, REPO_TEXT
 running = False  # Tells if the queue is running or not
 
 
-@app.on_message(filters.command("help") & ~filters.private)
+@app.on_message(filters.command("radyo") & ~filters.private)
 async def help(_, message):
     await message.reply_text(HELP_TEXT, quote=False)
 
@@ -40,14 +37,14 @@ async def repo(_, message):
 
 @app.on_message(filters.command("theme") & ~filters.private)
 async def theme_func(_, message):
-    usage = f"Wrong theme, select one from below\n{' | '.join(themes)}"
+    usage = f"Yanlış tema, aşağıdan birini seçin\n{' | '.join(themes)}"
     if len(message.command) != 2:
         return await message.reply_text(usage)
     theme = message.text.split(None, 1)[1].strip()
     if theme not in themes:
         return await message.reply_text(usage)
     change_theme(theme, message.chat.id)
-    await message.reply_text(f"Changed theme to {theme}")
+    await message.reply_text(f"Tema Değiştirildi {theme}")
 
 
 @app.on_message(filters.command("joinvc") & ~filters.private)
@@ -57,7 +54,7 @@ async def joinvc(_, message):
         db[chat_id] = {}
 
     if "call" in db[chat_id]:
-        return await message.reply_text("__**Bot Is Already In The VC**__")
+        return await message.reply_text("**Bot Zaten Sesli Sohbette**")
     os.popen(f"cp etc/sample_input.raw input{chat_id}.raw")
 
     vc = GroupCall(app, f"input{chat_id}.raw")
@@ -68,6 +65,7 @@ async def joinvc(_, message):
         await db[chat_id]["call"].start(chat_id)
     except Exception:
         peer = await app.resolve_peer(chat_id)
+        print(peer)
         startVC = CreateGroupCall(
             peer=InputPeerChannel(
                 channel_id=peer.channel_id,
@@ -81,31 +79,30 @@ async def joinvc(_, message):
         except ChatAdminRequired:
             del db[chat_id]["call"]
             return await message.reply_text(
-                "Make me admin with message delete and vc manage permission"
+                "Mesaj silme ve sesli sohbet yönetme izniyle beni yönetici yap"
             )
-    await message.reply_text("__**Joined The Voice Chat.**__")
+    await message.reply_text("**Sesli Sohbet'e katıldı.**")
 
 
 @app.on_message(filters.command("leavevc") & ~filters.private)
 async def leavevc(_, message):
     chat_id = message.chat.id
-    if chat_id in db:
-        if "call" in db[chat_id]:
-            vc = db[chat_id]["call"]
-            del db[chat_id]["call"]
-            await vc.leave_current_group_call()
-            await vc.stop()
-    await message.reply_text("__**Left The Voice Chat**__", quote=False)
+    if chat_id in db and "call" in db[chat_id]:
+        vc = db[chat_id]["call"]
+        del db[chat_id]["call"]
+        await vc.leave_current_group_call()
+        await vc.stop()
+    await message.reply_text("**Sesli Sohbetten Ayrıldı**", quote=False)
 
 
 @app.on_message(filters.command("volume") & ~filters.private)
 async def volume_bot(_, message):
-    usage = "**Usage:**\n/volume [1-200]"
+    usage = "**Kullanım:**\n/volume [1-200]"
     chat_id = message.chat.id
     if chat_id not in db:
-        return await message.reply_text("VC isn't started")
+        return await message.reply_text("Sesli Sohbet Başlatılamadı..")
     if "call" not in db[chat_id]:
-        return await message.reply_text("VC isn't started")
+        return await message.reply_text("Sesli Sohbet Başlatılamadı..")
     vc = db[chat_id]["call"]
     if len(message.command) != 2:
         return await message.reply_text(usage, quote=False)
@@ -116,24 +113,23 @@ async def volume_bot(_, message):
         await vc.set_my_volume(volume=volume)
     except ValueError:
         return await message.reply_text(usage, quote=False)
-    await message.reply_text(f"**Volume Set To {volume}**", quote=False)
+    await message.reply_text(f"**Ses Ayarı {volume}**", quote=False)
 
 
 @app.on_message(filters.command("pause") & ~filters.private)
 async def pause_song_func(_, message):
     chat_id = message.chat.id
     if chat_id not in db:
-        return await message.reply_text("**VC isn't started**")
+        return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
     if "call" not in db[chat_id]:
-        return await message.reply_text("**VC isn't started**")
-    if "paused" in db[chat_id]:
-        if db[chat_id]["paused"] == True:
-            return await message.reply_text("**Already paused**")
+        return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
+    if "paused" in db[chat_id] and db[chat_id]["paused"] == True:
+        return await message.reply_text("**Already paused**")
     db[chat_id]["paused"] = True
     vc = db[chat_id]["call"]
     vc.pause_playout()
     await message.reply_text(
-        "**Paused The Music, Send `/resume` To Resume.**", quote=False
+        "**Müziği Duraklattı, Devam Etmek için `/resume` Gönder.**", quote=False
     )
 
 
@@ -141,17 +137,16 @@ async def pause_song_func(_, message):
 async def resume_song(_, message):
     chat_id = message.chat.id
     if chat_id not in db:
-        return await message.reply_text("**VC isn't started**")
+        return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
     if "call" not in db[chat_id]:
-        return await message.reply_text("**VC isn't started**")
-    if "paused" in db[chat_id]:
-        if db[chat_id]["paused"] == False:
-            return await message.reply_text("**Already playing**")
+        return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
+    if "paused" in db[chat_id] and db[chat_id]["paused"] == False:
+        return await message.reply_text("**Zaten Oynuyor**")
     db[chat_id]["paused"] = False
     vc = db[chat_id]["call"]
     vc.resume_playout()
     await message.reply_text(
-        "**Resumed, Send `/pause` To Pause The Music.**", quote=False
+        "**Sürdürüldü, Müziği Duraklatmak İçin `/pause` Gönderin.**", quote=False
     )
 
 
@@ -159,18 +154,18 @@ async def resume_song(_, message):
 async def skip_func(_, message):
     chat_id = message.chat.id
     if chat_id not in db:
-        return await message.reply_text("**VC isn't started**")
+        return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
     if "queue" not in db[chat_id]:
-        return await message.reply_text("**VC isn't started**")
+        return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
     queue = db[chat_id]["queue"]
     if queue.empty() and (
         "playlist" not in db[chat_id] or not db[chat_id]["playlist"]
     ):
         return await message.reply_text(
-            "__**Queue Is Empty, Just Like Your Life.**__", quote=False
+            "**Kuyruk Boş, Tıpkı Hayatınız Gibi.**", quote=False
         )
     db[chat_id]["skipped"] = True
-    await message.reply_text("__**Skipped!**__")
+    await message.reply_text("**Atlandı!**")
 
 
 @app.on_message(filters.command("play") & ~filters.private)
@@ -178,28 +173,26 @@ async def queuer(_, message):
     global running
     chat_id = message.chat.id
     try:
-        usage = """
-**Usage:**
-__**/play Song_Name**__ (uses youtube service)
-__**/play youtube/saavn/deezer Song_Name**__
-__**/play Reply_On_Audio**__"""
-
         if len(message.command) < 2 and (
             not message.reply_to_message or not message.reply_to_message.audio
         ):
+            usage = """
+**Kullanım:**
+
+```/play Eypio - Dardayım```"""
+
             return await message.reply_text(usage, quote=False)
         if chat_id not in db:
             db[chat_id] = {}
         if "call" not in db[chat_id]:
-            return await message.reply_text("**Use /joinvc First!**")
+            return await message.reply_text("**Önce /joinvc !**")
         if message.reply_to_message:
-            if message.reply_to_message.audio:
-                service = "telegram"
-                song_name = message.reply_to_message.audio.title
-            else:
+            if not message.reply_to_message.audio:
                 return await message.reply_text(
-                    "**Reply to a telegram audio file**"
+                    "**Ses dosyasına cevap verin**"
                 )
+            service = "telegram"
+            song_name = message.reply_to_message.audio.title
         else:
             text = message.text.split("\n")[0]
             text = text.split(None, 2)[1:]
@@ -218,7 +211,7 @@ __**/play Reply_On_Audio**__"""
         if not db[chat_id]["queue"].empty() or (
             "running" in db[chat_id] and db[chat_id]["running"]
         ):
-            await message.reply_text("__**Added To Queue.__**", quote=False)
+            await message.reply_text(f"`{song_name}` __Kuyruğa Eklendi.__", quote=False, disable_web_page_preview = True)
 
         await db[chat_id]["queue"].put(
             {
@@ -245,7 +238,7 @@ __**/play Reply_On_Audio**__"""
         print(e)
 
 
-@app.on_message(filters.command("queue") & ~filters.private)
+@app.on_message(filters.command("kuyruk") & ~filters.private)
 async def queue_list(_, message):
     chat_id = message.chat.id
     if chat_id not in db:
@@ -255,7 +248,7 @@ async def queue_list(_, message):
     queue = db[chat_id]["queue"]
     if queue.empty():
         return await message.reply_text(
-            "__**Queue Is Empty, Just Like Your Life.**__", quote=False
+            "__Kuyruk Boş, Tıpkı Hayatınız Gibi.__", quote=False
         )
     if (
         len(message.text.split()) > 1
@@ -269,12 +262,12 @@ async def queue_list(_, message):
         if not pl_format:
             text += f"**{count}. {song['service'].__name__}** | __{song['query']}__  |  {song['requested_by']}\n"
         else:
-            text += f"{song['query']}\n"
+            text += f"`{song['query']}`\n"
     if len(text) > 4090:
         return await message.reply_text(
-            f"**There are {queue.qsize()} songs in queue.**"
+            f"**Kuyrukta {queue.qsize()} şarkı var.**"
         )
-    await message.reply_text(text)
+    await message.reply_text(text, disable_web_page_preview = True)
 
 
 # Queue handler
@@ -306,11 +299,8 @@ async def start_queue(chat_id, message=None):
 @app.on_message(filters.command("listvc") & ~filters.private)
 async def list_vc(_, message):
     if len(db) == 0:
-        return await message.reply_text("There are no active voice chats")
-    chats = []
-    for chat in db:
-        if "call" in db[chat]:
-            chats.append(int(chat))
+        return await message.reply_text("Aktif sesli sohbet yok..")
+    chats = [int(chat) for chat in db if "call" in db[chat]]
     text = ""
     for count, chat_id in enumerate(chats, 1):
         try:
@@ -320,7 +310,7 @@ async def list_vc(_, message):
             chat_title = "Private"
         text += f"**{count}.** [`{chat_id}`]  **{chat_title}**\n"
     if not text:
-        return await message.reply_text("There are no active voice chats")
+        return await message.reply_text("Aktif sesli sohbet yok..")
     await message.reply_text(text)
 
 
@@ -329,15 +319,15 @@ async def stop_vc(_, message):
     global db
     chat_id = message.chat.id
     if chat_id not in db:
-        return await message.reply_text("**VC isn't started**")
+        return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
     if "call" not in db[chat_id]:
-        return await message.reply_text("**VC isn't started**")
+        return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
     vc = db[chat_id]["call"]
     vc.set_is_mute(True)
     if "stopped" not in db[chat_id]:
         db[chat_id]["stopped"] = False
     db[chat_id]["stopped"] = True
-    await message.reply_text("**Stopped, Send /start To Start.**", quote=False)
+    await message.reply_text("**Durduruldu, Başlamak için /start Gönder..**", quote=False)
 
 
 @app.on_message(filters.command("start") & ~filters.private)
@@ -345,15 +335,15 @@ async def start_vc(_, message):
     global db
     chat_id = message.chat.id
     if chat_id not in db:
-        return await message.reply_text("**VC isn't started**")
+        return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
     if "call" not in db[chat_id]:
-        return await message.reply_text("**VC isn't started**")
+        return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
     vc = db[chat_id]["call"]
     vc.set_is_mute(False)
     if "stopped" not in db[chat_id]:
         db[chat_id]["stopped"] = False
     db[chat_id]["stopped"] = False
-    await message.reply_text("**Started, Send /stop To Stop.**", quote=False)
+    await message.reply_text("**Başlatıldı, Durdurmak için /stop Gönder..**", quote=False)
 
 
 @app.on_message(filters.command("replay") & ~filters.private)
@@ -361,33 +351,33 @@ async def replay_vc(_, message):
     global db
     chat_id = message.chat.id
     if chat_id not in db:
-        return await message.reply_text("**VC isn't started**")
+        return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
     if "call" not in db[chat_id]:
-        return await message.reply_text("**VC isn't started**")
+        return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
     vc = db[chat_id]["call"]
     vc.set_is_mute(True)
     vc.set_is_mute(False)
     if "replayed" not in db[chat_id]:
         db[chat_id]["replayed"] = False
     db[chat_id]["replayed"] = True
-    await message.reply_text("**The Music Replayed**", quote=False)
+    await message.reply_text("**Müzik Tekrarlanıyor..**", quote=False)
 
 
-@app.on_message(filters.command("delqueue") & ~filters.private)
+@app.on_message(filters.command("temizle") & ~filters.private)
 async def clear_queue(_, message):
     global db
     chat_id = message.chat.id
     if chat_id not in db:
-        return await message.reply_text("**VC isn't started**")
+        return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
     if "call" not in db[chat_id]:
-        return await message.reply_text("**VC isn't started**")
+        return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
     if ("queue" not in db[chat_id] or db[chat_id]["queue"].empty()) and (
         "playlist" not in db[chat_id] or not db[chat_id]["playlist"]
     ):
-        return await message.reply_text("**Queue Already is Empty**")
+        return await message.reply_text("**Kuyruk Zaten Boş**")
     db[chat_id]["playlist"] = False
     db[chat_id]["queue"] = asyncio.Queue()
-    await message.reply_text("**Successfully Cleared the Queue**", quote=False)
+    await message.reply_text("**Kuyruk Başarıyla Temizlendi**", quote=False)
 
 
 @app.on_message(filters.command("playlist") & ~filters.private)
@@ -399,25 +389,26 @@ async def playlist(_, message: Message, redirected=False):
         raw_playlist = message.text[10:]
     else:
         usage = """
-**Usage: Same as /play
-Example:
-    __**/playlist song_name1
-    song_name2
-    youtube song_name3**__"""
+**Kullanım:** /play ile aynı
+
+**Misal:**
+```/playlist Mary Jane - Mevsim Bahar
+Fikri Karayel - Yol
+Eypio - Dardayım```"""
 
         return await message.reply_text(usage, quote=False)
     if chat_id not in db:
         db[chat_id] = {}
     if "call" not in db[chat_id]:
-        return await message.reply_text("**Use /joinvc First!**")
+        return await message.reply_text("**Önce /joinvc !**")
     if "playlist" not in db[chat_id]:
         db[chat_id]["playlist"] = False
     if "running" in db[chat_id] and db[chat_id]["running"]:
         db[chat_id]["queue_breaker"] = 1
     db[chat_id]["playlist"] = True
     db[chat_id]["queue"] = asyncio.Queue()
+    services = ["youtube", "deezer", "saavn"]
     for line in raw_playlist.split("\n"):
-        services = ["youtube", "deezer", "saavn"]
         if line.split()[0].lower() in services:
             service = line.split()[0].lower()
             song_name = " ".join(line.split()[1:])
@@ -441,7 +432,7 @@ Example:
         )
     if not redirected:
         db[chat_id]["running"] = True
-        await message.reply_text("**Playlist Started.**")
+        await message.reply_text("**Oynatma Listesi Başladı.**")
         await start_queue(chat_id, message=message)
 
 
@@ -450,10 +441,10 @@ async def lyrics(_, message):
     global db
     chat_id = message.chat.id
     if chat_id not in db or "call" not in db[chat_id]:
-        return await message.reply_text("**VC isn't started**")
+        return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
     if "currently" not in db[chat_id]:
-        return await message.reply_text("**No Song is Playing**")
-    msg = await message.reply_text("**__Getting Lyric__**")
+        return await message.reply_text("**Hiçbir Şarkı Çalmıyor**")
+    msg = await message.reply_text("**Şarkı Sözleri Alınıyor..**")
     data = db[chat_id]["currently"]
     lyric = await get_lyric(data["query"], data["artist"], data["song"])
     await msg.edit_text(lyric, parse_mode=None)
@@ -461,11 +452,11 @@ async def lyrics(_, message):
 
 app.start()
 idle()
-print("Waiting for Deleting Input Files...")
+print("Girilen Dosyaların Silinmesi Bekleniyor...")
 for x in os.listdir():
     if x.endswith(".raw") or x.endswith(".mp3"):
         os.remove(x)
-print("Turning Off...")
+print("Kapatma...")
 
 
 async def closeSession(session):
