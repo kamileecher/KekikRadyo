@@ -21,22 +21,35 @@ from functions import (app, change_theme, deezer, get_default_service,
                        get_lyric, get_theme, saavn, session, telegram, themes,
                        transcode, youtube)
 from misc import HELP_TEXT, REPO_TEXT
+from config import YETKILI
 
 running = False  # Tells if the queue is running or not
 
 
 @app.on_message(filters.command("radyo") & ~filters.private)
 async def help(_, message):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     await message.reply_text(HELP_TEXT, quote=False)
 
 
 @app.on_message(filters.command("repo") & ~filters.private)
 async def repo(_, message):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     await message.reply_text(REPO_TEXT, quote=False)
 
 
 @app.on_message(filters.command("theme") & ~filters.private)
 async def theme_func(_, message):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     usage = f"Yanlış tema, aşağıdan birini seçin\n{' | '.join(themes)}"
     if len(message.command) != 2:
         return await message.reply_text(usage)
@@ -49,6 +62,10 @@ async def theme_func(_, message):
 
 @app.on_message(filters.command("joinvc") & ~filters.private)
 async def joinvc(_, message):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     chat_id = message.chat.id
     if chat_id not in db:
         db[chat_id] = {}
@@ -86,6 +103,10 @@ async def joinvc(_, message):
 
 @app.on_message(filters.command("leavevc") & ~filters.private)
 async def leavevc(_, message):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     chat_id = message.chat.id
     if chat_id in db and "call" in db[chat_id]:
         vc = db[chat_id]["call"]
@@ -97,6 +118,10 @@ async def leavevc(_, message):
 
 @app.on_message(filters.command("volume") & ~filters.private)
 async def volume_bot(_, message):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     usage = "**Kullanım:**\n/volume [1-200]"
     chat_id = message.chat.id
     if chat_id not in db:
@@ -118,6 +143,10 @@ async def volume_bot(_, message):
 
 @app.on_message(filters.command("pause") & ~filters.private)
 async def pause_song_func(_, message):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     chat_id = message.chat.id
     if chat_id not in db:
         return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
@@ -135,6 +164,10 @@ async def pause_song_func(_, message):
 
 @app.on_message(filters.command("resume") & ~filters.private)
 async def resume_song(_, message):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     chat_id = message.chat.id
     if chat_id not in db:
         return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
@@ -152,6 +185,10 @@ async def resume_song(_, message):
 
 @app.on_message(filters.command("skip") & ~filters.private)
 async def skip_func(_, message):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     chat_id = message.chat.id
     if chat_id not in db:
         return await message.reply_text("**Sesli Sohbet Başlatılamadı..**")
@@ -170,6 +207,10 @@ async def skip_func(_, message):
 
 @app.on_message(filters.command("play") & ~filters.private)
 async def queuer(_, message):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     global running
     chat_id = message.chat.id
     try:
@@ -240,6 +281,10 @@ async def queuer(_, message):
 
 @app.on_message(filters.command("kuyruk") & ~filters.private)
 async def queue_list(_, message):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     chat_id = message.chat.id
     if chat_id not in db:
         db[chat_id] = {}
@@ -298,6 +343,10 @@ async def start_queue(chat_id, message=None):
 
 @app.on_message(filters.command("listvc") & ~filters.private)
 async def list_vc(_, message):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     if len(db) == 0:
         return await message.reply_text("Aktif sesli sohbet yok..")
     chats = [int(chat) for chat in db if "call" in db[chat]]
@@ -316,6 +365,10 @@ async def list_vc(_, message):
 
 @app.on_message(filters.command("stop") & ~filters.private)
 async def stop_vc(_, message):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     global db
     chat_id = message.chat.id
     if chat_id not in db:
@@ -332,6 +385,10 @@ async def stop_vc(_, message):
 
 @app.on_message(filters.command("start") & ~filters.private)
 async def start_vc(_, message):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     global db
     chat_id = message.chat.id
     if chat_id not in db:
@@ -348,6 +405,10 @@ async def start_vc(_, message):
 
 @app.on_message(filters.command("replay") & ~filters.private)
 async def replay_vc(_, message):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     global db
     chat_id = message.chat.id
     if chat_id not in db:
@@ -365,6 +426,10 @@ async def replay_vc(_, message):
 
 @app.on_message(filters.command("temizle") & ~filters.private)
 async def clear_queue(_, message):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     global db
     chat_id = message.chat.id
     if chat_id not in db:
@@ -382,6 +447,10 @@ async def clear_queue(_, message):
 
 @app.on_message(filters.command("playlist") & ~filters.private)
 async def playlist(_, message: Message, redirected=False):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     chat_id = message.chat.id
     if message.reply_to_message:
         raw_playlist = message.reply_to_message.text
@@ -438,6 +507,10 @@ Eypio - Dardayım```"""
 
 @app.on_message(filters.command("lyric") & ~filters.private)
 async def lyrics(_, message):
+    if str(message.from_user.id) not in YETKILI:
+        await message.reply("__admin değilmişsin kekkooo__", quote=True)
+        return
+
     global db
     chat_id = message.chat.id
     if chat_id not in db or "call" not in db[chat_id]:
