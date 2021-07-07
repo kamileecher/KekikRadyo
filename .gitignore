@@ -19,5 +19,7 @@ __pycache__/
 
 /*.session
 /*.session-journal
+temp*.png
+final*.png
 input-*.raw
 group_call.log

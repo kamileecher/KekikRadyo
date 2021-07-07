@@ -3,14 +3,12 @@
 from pyrogram import Client, __version__
 from aiohttp import ClientSession
 
-from config import API_ID, API_HASH, ARQ_API_KEY
-from Python_ARQ import ARQ
+from config import API_ID, API_HASH
 
 SESSION_ADI = "KekikRadyo"
 
 app     = Client(session_name=SESSION_ADI, api_id=API_ID, api_hash=API_HASH, plugins=dict(root="Commands"))
 session = ClientSession()
-arq     = ARQ("https://thearq.tech", ARQ_API_KEY, session)
 
 themes  = ["kekik"]
 

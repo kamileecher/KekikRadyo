@@ -28,10 +28,6 @@ async def youtube(requested_by, query, message:Message):
     ydl_opts = {"format": "bestaudio", "quiet": True}
     mesaj = await message.reply_text(f"**YouTube'da `{query}` aranıyor.**", quote=False)
 
-    # results = await arq.youtube(query) #  get("https://thearq.tech/youtube", headers={'X-API-KEY' : 'XXXX'}, params={'query': 'elfida'}).text
-    # if not results.ok:
-    #     return await m.edit(results.result)
-
     result    = await get_youtube(query)
     link      = f"https://youtube.com/watch?v={result['id']}"
     title     = result['title']
