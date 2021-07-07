@@ -1,9 +1,11 @@
-YETKILI         = ["717569643", "807447377", "1655311598"]
+# Bu araç @keyiflerolsun tarafından | @KekikAkademi için yazılmıştır.
 
-API_ID          = 1111
-API_HASH        = "1111111111"
-ARQ_API_KEY     = "111111111" # From @ARQRobot
-DEFAULT_SERVICE = "youtube"  # Must be one of "youtube"/"deezer"/"saavn"
+YETKILI         = ["11111111", "22222", "33333", "444444"]
 
-# don't make changes below this line
-ARQ_API = "https://thearq.tech"
+API_ID          = 1111111                             # From my.telegram.org/apps
+API_HASH        = "11111111111111111111111111111111"  # From my.telegram.org/apps
+ARQ_API_KEY     = "111111111111111111111111111-ARQ"   # From @ARQRobot
+DEFAULT_SERVICE = "deezer"                            # Must be one of "youtube"/"deezer"/"saavn"
+
+YT_MAX_MINUTES  = 45
+TG_MAX_MB       = 150

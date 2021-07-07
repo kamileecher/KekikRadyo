@@ -1,10 +1,10 @@
-Pillow
-pytgcalls
-ffmpeg-python
-python-arq
+KekikTaban
 Pyrogram
 TgCrypto
-youtube_dl
-aiofiles
+pytgcalls
 aiohttp
-python-dotenv
+aiofiles
+Pillow
+ffmpeg-python
+youtube-search-python
+youtube_dl
